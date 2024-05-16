@@ -8,6 +8,7 @@ services:
     env_file:
       - ./apps/orders/.env
     depends_on:
+        # - mongo
       - mongodb-primary
       - mongodb-secondary
       - mongodb-arbiter
@@ -15,10 +16,43 @@ services:
       - .:/usr/src/app
       - /usr/src/app/node_modules
     ports:
-      - '3000:3000'
+      - '4000:4000'
   
+  billing:
+    build:
+      context: .
+      dockerfile: ./apps/billing/Dockerfile
+      target: development
+    command: npm run start:dev billing
+    env_file:
+      - ./apps/billing/.env
+    depends_on:
+        # - mongo
+      - mongodb-primary
+      - mongodb-secondary
+      - mongodb-arbiter
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - '5672:5672'
+
+  # mongo:
+  #   image: mongo
+  #   restart: always
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: root
+  #     MONGO_INITDB_ROOT_PASSWORD: password123
+  #     MONGODB_REPLICA_SET_MODE: primary
+  #     MONGODB_REPLICA_SET_KEY: replicasetkey123
+  #   ports:
+  #     - '27017:27017'
+
   mongodb-primary:
-    image: docker.io/bitnami/mongodb:5.0
+    image: docker.io/bitnami/mongodb:7.0
     environment:
       - MONGODB_ADVERTISED_HOSTNAME=mongodb-primary
       - MONGODB_REPLICA_SET_MODE=primary
@@ -30,7 +64,7 @@ services:
       - '27017:27017'
 
   mongodb-secondary:
-    image: docker.io/bitnami/mongodb:5.0
+    image: docker.io/bitnami/mongodb:7.0
     depends_on:
       - mongodb-primary
     environment:
@@ -41,7 +75,7 @@ services:
       - MONGODB_REPLICA_SET_KEY=replicasetkey123
 
   mongodb-arbiter:
-    image: docker.io/bitnami/mongodb:5.0
+    image: docker.io/bitnami/mongodb:7.0
     depends_on:
       - mongodb-primary
     environment:
