@@ -8,10 +8,12 @@ services:
     env_file:
       - ./apps/orders/.env
     depends_on:
-        # - mongo
       - mongodb-primary
       - mongodb-secondary
       - mongodb-arbiter
+      - billing
+      - auth
+      - rabbitmq
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
@@ -27,10 +29,30 @@ services:
     env_file:
       - ./apps/billing/.env
     depends_on:
-        # - mongo
       - mongodb-primary
       - mongodb-secondary
       - mongodb-arbiter
+      - rabbitmq
+      - auth
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+
+  auth:
+    build:
+      context: .
+      dockerfile: ./apps/auth/Dockerfile
+      target: development
+    command: npm run start:dev auth
+    ports:
+      - '4001:4001'
+    env_file: 
+      - ./apps/auth/.env
+    depends_on:
+      - mongodb-primary
+      - mongodb-secondary
+      - mongodb-arbiter
+      - rabbitmq
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
@@ -39,17 +61,6 @@ services:
     image: rabbitmq
     ports:
       - '5672:5672'
-
-  # mongo:
-  #   image: mongo
-  #   restart: always
-  #   environment:
-  #     MONGO_INITDB_ROOT_USERNAME: root
-  #     MONGO_INITDB_ROOT_PASSWORD: password123
-  #     MONGODB_REPLICA_SET_MODE: primary
-  #     MONGODB_REPLICA_SET_KEY: replicasetkey123
-  #   ports:
-  #     - '27017:27017'
 
   mongodb-primary:
     image: docker.io/bitnami/mongodb:7.0
